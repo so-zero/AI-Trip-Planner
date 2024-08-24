@@ -19,11 +19,15 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/config/firebase";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 const CreateTrip = () => {
   const [place, setPlace] = useState();
   const [formData, setFormData] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (name, value) => {
     setFormData({
@@ -57,6 +61,7 @@ const CreateTrip = () => {
       toast("선택사항을 모두 선택해주세요.");
       return;
     }
+    setLoading(true);
 
     const FINAL_PROMPT = AI_PROMPT.replace("{budget}", formData?.budget)
       .replace("{traveler}", formData?.traveler)
@@ -64,11 +69,29 @@ const CreateTrip = () => {
       .replace("{location}", formData?.location?.label)
       .replace("{totalDays}", formData?.days);
 
-    console.log(FINAL_PROMPT);
-
     const result = await chatSession.sendMessage(FINAL_PROMPT);
 
-    console.log(result?.response?.text());
+    console.log("--", result?.response?.text());
+
+    setLoading(false);
+
+    saveAiTrip(result?.response?.text());
+  };
+
+  const saveAiTrip = async (data) => {
+    setLoading(true);
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const docId = Date.now().toString();
+
+    await setDoc(doc(db, "AITrips", docId), {
+      userSelection: formData,
+      tripData: JSON.parse(data),
+      userEmail: user?.email,
+      id: docId,
+    });
+
+    setLoading(false);
   };
 
   const getUserInfo = (tokenInfo) => {
@@ -169,7 +192,13 @@ const CreateTrip = () => {
           </div>
         </div>
         <div className="my-10 flex justify-end">
-          <Button onClick={onGenerateTrip}>여행 스타일 검색하기</Button>
+          <Button disabled={loading} onClick={onGenerateTrip}>
+            {loading ? (
+              <AiOutlineLoading3Quarters className="w-7 h-7 animate-spin" />
+            ) : (
+              "여행 스타일 검색하기"
+            )}
+          </Button>
         </div>
         <Dialog open={openDialog}>
           <DialogContent>
