@@ -3,10 +3,13 @@ import Header from "@/components/custom/Header";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
 import { Input } from "@/components/ui/input";
 import {
+  AI_PROMPT,
   selectBudgetOptions,
   selectTravelList,
 } from "@/components/constants/options";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { chatSession } from "@/config/AIModel";
 
 const CreateTrip = () => {
   const [place, setPlace] = useState();
@@ -23,11 +26,27 @@ const CreateTrip = () => {
     console.log(formData);
   }, [formData]);
 
-  const onGenerateTrip = () => {
-    if (formData?.days > 5) {
+  const onGenerateTrip = async () => {
+    if (
+      (formData?.days > 5 && !formData?.location) ||
+      !formData.budget ||
+      !formData.traveler
+    ) {
+      toast("선택사항을 모두 선택해주세요.");
       return;
     }
-    console.log(formData);
+
+    const FINAL_PROMPT = AI_PROMPT.replace("{budget}", formData?.budget)
+      .replace("{traveler}", formData?.traveler)
+      .replace("{totalDays}", formData?.days)
+      .replace("{location}", formData?.location?.label)
+      .replace("{totalDays}", formData?.days);
+
+    console.log(FINAL_PROMPT);
+
+    const result = await chatSession.sendMessage(FINAL_PROMPT);
+
+    console.log(result?.response?.text());
   };
 
   return (
@@ -52,7 +71,7 @@ const CreateTrip = () => {
                 place,
                 onChange: (value) => {
                   setPlace(value);
-                  handleInputChange(location, value);
+                  handleInputChange("location", value);
                 },
               }}
             />
