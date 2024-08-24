@@ -10,10 +10,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { chatSession } from "@/config/AIModel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+} from "@/components/ui/dialog";
+import { FcGoogle } from "react-icons/fc";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 
 const CreateTrip = () => {
   const [place, setPlace] = useState();
   const [formData, setFormData] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
 
   const handleInputChange = (name, value) => {
     setFormData({
@@ -26,7 +36,19 @@ const CreateTrip = () => {
     console.log(formData);
   }, [formData]);
 
+  const login = useGoogleLogin({
+    onSuccess: (codeResp) => getUserInfo(codeResp),
+    onError: (error) => console.log(error),
+  });
+
   const onGenerateTrip = async () => {
+    const user = localStorage.getItem("user");
+
+    if (!user) {
+      setOpenDialog(true);
+      return;
+    }
+
     if (
       (formData?.days > 5 && !formData?.location) ||
       !formData.budget ||
@@ -47,6 +69,25 @@ const CreateTrip = () => {
     const result = await chatSession.sendMessage(FINAL_PROMPT);
 
     console.log(result?.response?.text());
+  };
+
+  const getUserInfo = (tokenInfo) => {
+    axios
+      .get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenInfo?.access_token}`,
+            Accept: "Application/json",
+          },
+        }
+      )
+      .then((response) => {
+        console.log(response);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        setOpenDialog(false);
+        onGenerateTrip();
+      });
   };
 
   return (
@@ -130,6 +171,28 @@ const CreateTrip = () => {
         <div className="my-10 flex justify-end">
           <Button onClick={onGenerateTrip}>여행 스타일 검색하기</Button>
         </div>
+        <Dialog open={openDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogDescription>
+                <div className="flex items-center gap-3">
+                  <img src="plane.svg" alt="logo" className="w-10 h-10" />
+                  <h1 className="font-bold text-black text-xl">AI Trip</h1>
+                </div>
+                <h2 className="font-bold text-lg mt-7 mb-2">
+                  로그인이 필요합니다.
+                </h2>
+                <p>Google 인증으로 안전하게 앱에 로그인하세요</p>
+                <Button
+                  onClick={login}
+                  className="w-full mt-5 flex gap-4 items-center"
+                >
+                  <FcGoogle className="w-5 h-5" /> 구글 로그인
+                </Button>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
