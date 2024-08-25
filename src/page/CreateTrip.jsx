@@ -22,8 +22,10 @@ import axios from "axios";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useNavigate } from "react-router-dom";
 
 const CreateTrip = () => {
+  const navigate = useNavigate();
   const [place, setPlace] = useState();
   const [formData, setFormData] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -71,8 +73,6 @@ const CreateTrip = () => {
 
     const result = await chatSession.sendMessage(FINAL_PROMPT);
 
-    console.log("--", result?.response?.text());
-
     setLoading(false);
 
     saveAiTrip(result?.response?.text());
@@ -92,6 +92,8 @@ const CreateTrip = () => {
     });
 
     setLoading(false);
+
+    navigate(`/view-trip/${docId}`);
   };
 
   const getUserInfo = (tokenInfo) => {
