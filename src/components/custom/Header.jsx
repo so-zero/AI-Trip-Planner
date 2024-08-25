@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { FcGoogle } from "react-icons/fc";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -53,14 +53,23 @@ const Header = () => {
     <div className="p-3 px-5 flex items-center justify-between shadow-sm">
       <div className="flex items-center justify-center gap-3">
         <img src="/plane.svg" alt="logo" className="w-10 h-10" />
-        <span className="text-lg font-bold">AI Trip</span>
+        <Link to="/" className="text-lg font-bold">
+          AI Trip
+        </Link>
       </div>
       <div>
         {user ? (
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="rounded-full">
-              마이페이지
-            </Button>
+            <Link to="/create-trip">
+              <Button variant="outline" className="rounded-full">
+                + Create Trip
+              </Button>
+            </Link>
+            <Link to="/my-trips">
+              <Button variant="outline" className="rounded-full">
+                My Trips
+              </Button>
+            </Link>
             <Popover>
               <PopoverTrigger>
                 <img
